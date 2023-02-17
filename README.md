@@ -1,2 +1,2 @@
 # AniSync
-Application that Syncs MyAnimeList to a Sonar Instance 
+Application that Syncs MyAnimeList to a Sonar Instance Still work in Progress 
