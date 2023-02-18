@@ -13,11 +13,12 @@ Headers = {'Authorization' : 'Bearer ' +Token ,
 TargetShows =[]
 
 ##Getting the User Name 
-def getUserINFO():
+def getUserInfo():
     url = BaseURL+'/users/@me'
     response = requests.get(url, headers = {'Authorization': f'Bearer {Token}' })
     user = response.json()
     print (user)
+    return(user)
 
 
 

@@ -5,6 +5,8 @@ Base_URL = "http://192.168.50.250:8989/api/v3/"
 ApiKey = '045fdf958ea74caa9b7bf60a7912b9fe'
 Headers = {'accept':'application/json','Content-Type': 'application/json'}
 AnimeInfo=[]
+
+
 def GetSonarr():
   SeriesRL = "series/?"
   Full_URL = Base_URL+SeriesRL+"apikey=" + ApiKey
