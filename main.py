@@ -2,7 +2,6 @@ import json
 import requests
 import secrets
 
-TargetShows =[]
 #Reading Token and Api Key for MyAL and Sonarr
 with open ('Token.json') as Token_File:
   Token_Json = json.load(Token_File)
@@ -48,7 +47,7 @@ def GetAnimeInfo(ID):
 
 ##Pulling the IDs of the Shows on My anme List
 def GetAnimeList():
-    global TargetShows
+    TargetShows=[]
     url= MyAl_BaseURL+'/users/@me/animelist?fields=list_status&limit=1000'
     body = {'status':'plan_to_watch'}
     response = requests.get(url,headers=MyAl_Headers,params=body)
@@ -134,8 +133,6 @@ def AddSonarr():
   AddRequest = requests.post(Full_URL,Body,headers=Sonarr_Headers)
   if ("This series has already been added" in json.dumps(AddRequest.json(),indent=4)):
      print ("Error!" + SonarrTitle + " is Already in Sonarr perhaps there is a misname between Sonarr and My Anime list?")
-  with open ("ContentResponse.json" ,'w') as ContentResponse:
-     ContentResponse.write(json.dumps(AddRequest.json(),indent=4))
 
 
 def Main():
@@ -143,7 +140,7 @@ def Main():
     SonarrValidation()
     SonarrShows = GetSonarrShows()
     i=0 
-    GetAnimeList()
+    TargetShows =GetAnimeList()
     while i < len(TargetShows):
       if TargetShows[i] in SonarrShows:
          print (TargetShows[i] + ' is already in Sonarr')
