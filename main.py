@@ -4,8 +4,8 @@ import secrets
 
 TargetShows =[]
 #Reading Token and Api Key for MyAL and Sonarr
-Token_File = open('Token.json')
-Token_Json = json.load(Token_File)
+with open ('Token.json') as Token_File:
+  Token_Json = json.load(Token_File)
 MyAl_Token = Token_Json['access_token']
 Sonarr_Token = Token_Json['Sonarr_Key']
 #Formatting Headers
@@ -54,10 +54,10 @@ def GetAnimeList():
     response = requests.get(url,headers=MyAl_Headers,params=body)
     anime= json.dumps(response.json(),indent=4)  
     ##Writing users anime list to a Json file 
-    with open('demolist.json' ,'w') as demolist:
-        demolist.write(anime)
-    with open('demolist.json' ,'r') as demolist:
-      jsonlist = json.load(demolist)
+    with open('PlantoWatchDB.json' ,'w') as PlantoWatchDB:
+        PlantoWatchDB.write(anime)
+    with open('PlantoWatchDB.json' ,'r') as PlantoWatchDB:
+      jsonlist = json.load(PlantoWatchDB)
       I=0
       while I < len(jsonlist['data']):
         #Return Shows with English translations or Shows without as Standard
@@ -68,6 +68,8 @@ def GetAnimeList():
             #print(GetAnimeInfo((jsonlist['data'][I]['node']['id'])))
             TargetShows.append(GetAnimeInfo((jsonlist['data'][I]['node']['id'])))
         I+=1
+    with open('PlantoWatchDB.json', 'w') as PlantoWatchDB:
+       PlantoWatchDB.write(json.dumps(TargetShows))
     return(TargetShows)
 
 def GetSonarrShows():
@@ -75,13 +77,13 @@ def GetSonarrShows():
   Full_URL = Sonarr_BaseURL+SeriesRL+"apikey=" + Sonarr_Token
   SonarrList = requests.get(Full_URL,headers=Sonarr_Headers).json()
   AnimeList = json.loads(json.dumps(SonarrList,indent=4))
-  #with open('SonarrList.json' ,"w") as AniList:
-  #  AniList.write(AnimeList)
   SonarrShow = []
   i = 0
   while i < len(AnimeList):
      SonarrShow.append(AnimeList[i]['title'])
-     i +=1 
+     i +=1
+  with open('SonarrList.json' ,"w") as AniList:
+    AniList.write(json.dumps(SonarrShow))
   return(SonarrShow)
 
    
@@ -92,14 +94,13 @@ def SearchSonarr(ShowName):
   Full_URL = Sonarr_BaseURL+SearchURL
   SearchResponse= requests.get(Full_URL,headers=Sonarr_Headers)
   final_result = json.dumps(SearchResponse.json()[0],indent=4)       ##Converts to a dictionary 
-  with open('SonarrSearch.json' ,"w") as AniList:
-    AniList.write(final_result)
   AnimeInfo= json.loads(final_result)
   return(AnimeInfo)
 
 
 #Function to Phrase the Animne Body Payload 
 def PhrasePayload(AnimeInfo):
+  global  SonarrTitle
   AnimeInfo["languageProfileId"] = 1
     ##QUALITY SETTING DEFAULTS, 
   Any = 1 
@@ -121,8 +122,7 @@ def PhrasePayload(AnimeInfo):
   AnimeInfo['addOptions']= {'monitor':'all','searchForMissingEpisodes':True,'searchForCutoffUnmetEpisodes':True}
   AnimeInfo['seriesType'] ='anime'
   Anidata = json.dumps(AnimeInfo,indent=4)
-  with open('SonarrSearchUpdate.json' ,"w") as AniList:
-    AniList.write(Anidata) 
+  SonarrTitle = AnimeInfo['title']
   return(Anidata)
 
 
@@ -132,7 +132,10 @@ def AddSonarr():
   Full_URL = Sonarr_BaseURL+AddUrl+"apikey=" + Sonarr_Token
   Body= PhrasePayload(AnimeInfo=AnimeInfo)
   AddRequest = requests.post(Full_URL,Body,headers=Sonarr_Headers)
-  print (AddRequest.content)
+  if ("This series has already been added" in json.dumps(AddRequest.json(),indent=4)):
+     print ("Error!" + SonarrTitle + " is Already in Sonarr perhaps there is a misname between Sonarr and My Anime list?")
+  with open ("ContentResponse.json" ,'w') as ContentResponse:
+     ContentResponse.write(json.dumps(AddRequest.json(),indent=4))
 
 
 def Main():
