@@ -11,10 +11,30 @@ Sonarr_Token = Token_Json['Sonarr_Key']
 #Formatting Headers
 MyAl_BaseURL = 'https://api.myanimelist.net/v2'
 MyAl_Headers = {'Authorization' : 'Bearer ' + MyAl_Token , "Content-Type":"application/json"}
-Sonarr_BaseURL="http://192.168.50.250:8989/api/v3/"
+Sonarr_BaseURL="http://192.168.50.250:8999/api/v3/"
 Sonarr_Headers= {'accept':'application/json','Content-Type': 'application/json'}
 
 #Add ValidationStep to verify MyAl and Sonarr Instances
+def MyALValidation():
+   url = MyAl_BaseURL +'/users/@me'
+   response = requests.get(url,headers=MyAl_Headers)
+   user = response.json()
+   #username = user['name']
+   try:
+      username = user['name']
+      print ('My Anime List EndPoint validated. pulling from User : '+ username)
+   except:
+      response.raise_for_status()
+
+def SonarrValidation():
+   url = Sonarr_BaseURL + 'system/status?apikey=' + Sonarr_Token
+   response = requests.get(url)
+   System = response.json()
+   try:
+      systemname = System['instanceName']
+      print ('Sonarr EndPoint validated pushing shows to : ' + systemname)
+   except:
+      response.raise_for_status()
 
 
 def GetAnimeInfo(ID):
@@ -50,6 +70,21 @@ def GetAnimeList():
         I+=1
     return(TargetShows)
 
+def GetSonarrShows():
+  SeriesRL = "series/?"
+  Full_URL = Sonarr_BaseURL+SeriesRL+"apikey=" + Sonarr_Token
+  SonarrList = requests.get(Full_URL,headers=Sonarr_Headers).json()
+  AnimeList = json.loads(json.dumps(SonarrList,indent=4))
+  #with open('SonarrList.json' ,"w") as AniList:
+  #  AniList.write(AnimeList)
+  SonarrShow = []
+  i = 0
+  while i < len(AnimeList):
+     SonarrShow.append(AnimeList[i]['title'])
+     i +=1 
+  return(SonarrShow)
+
+   
 #Function to Search for the Shows 
 def SearchSonarr(ShowName):
   global AnimeInfo
@@ -66,7 +101,15 @@ def SearchSonarr(ShowName):
 #Function to Phrase the Animne Body Payload 
 def PhrasePayload(AnimeInfo):
   AnimeInfo["languageProfileId"] = 1
-  AnimeInfo["qualityProfileId"] = 7
+    ##QUALITY SETTING DEFAULTS, 
+  Any = 1 
+  SD = 2
+  HD_720P = 3
+  HD_1080P = 4
+  ULTRA_HD = 5
+  HD_720_1080P = 6
+  AnimeInfo["qualityProfileId"] = HD_720_1080P
+
   AnimeInfo['seasonFolder'] = True
   AnimeInfo['rootFolderPath']='/tv3/Anime'
   #print(len(AnimeInfo['seasons']))
@@ -93,11 +136,19 @@ def AddSonarr():
 
 
 def Main():
+    MyALValidation()
+    SonarrValidation()
+    SonarrShows = GetSonarrShows()
     i=0 
     GetAnimeList()
     while i < len(TargetShows):
-      SearchSonarr(TargetShows[i])
-      AddSonarr()
+      if TargetShows[i] in SonarrShows:
+         print (TargetShows[i] + ' is already in Sonarr')
+      else:
+        SearchSonarr(TargetShows[i])
+        AddSonarr()
       i+=1
+
+
 
 Main()
